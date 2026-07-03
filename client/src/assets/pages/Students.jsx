@@ -8,40 +8,58 @@ function Students() {
   const [email, setEmail] = useState("");
   const [course, setCourse] = useState("");
 
+  const [editingId, setEditingId] = useState(null);
+
   useEffect(() => {
     getStudents();
   }, []);
 
   const getStudents = async () => {
-    try {
-      const response = await API.get("/students");
-      setStudents(response.data);
-    } catch (error) {
-      console.log(error);
-    }
+    const response = await API.get("/students");
+    setStudents(response.data);
   };
 
-  const handleAddStudent = async () => {
+  const handleSubmit = async () => {
     if (!name || !email || !course) {
       alert("Please fill all fields");
       return;
     }
 
-    try {
-      await API.post("/students", {
+    if (editingId) {
+      await API.put(`/students/${editingId}`, {
         name,
         email,
         course,
       });
 
-      getStudents();
-
-      setName("");
-      setEmail("");
-      setCourse("");
-    } catch (error) {
-      console.log(error);
+      setEditingId(null);
+    } else {
+      await API.post("/students", {
+        name,
+        email,
+        course,
+      });
     }
+
+    setName("");
+    setEmail("");
+    setCourse("");
+
+    getStudents();
+  };
+
+  const editStudent = (student) => {
+    setEditingId(student._id);
+
+    setName(student.name);
+    setEmail(student.email);
+    setCourse(student.course);
+  };
+
+  const deleteStudent = async (id) => {
+    await API.delete(`/students/${id}`);
+
+    getStudents();
   };
 
   return (
@@ -57,28 +75,28 @@ function Students() {
           className="form-control mb-3"
           placeholder="Student Name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e)=>setName(e.target.value)}
         />
 
         <input
           className="form-control mb-3"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e)=>setEmail(e.target.value)}
         />
 
         <input
           className="form-control mb-3"
           placeholder="Course"
           value={course}
-          onChange={(e) => setCourse(e.target.value)}
+          onChange={(e)=>setCourse(e.target.value)}
         />
 
         <button
           className="btn btn-primary"
-          onClick={handleAddStudent}
+          onClick={handleSubmit}
         >
-          Add Student
+          {editingId ? "Update Student" : "Add Student"}
         </button>
 
       </div>
@@ -91,14 +109,14 @@ function Students() {
             <th>Name</th>
             <th>Email</th>
             <th>Course</th>
+            <th>Action</th>
           </tr>
 
         </thead>
 
         <tbody>
 
-          {students.map((student) => (
-
+          {students.map((student)=>(
             <tr key={student._id}>
 
               <td>{student.name}</td>
@@ -107,8 +125,25 @@ function Students() {
 
               <td>{student.course}</td>
 
-            </tr>
+              <td>
 
+                <button
+                  className="btn btn-warning btn-sm me-2"
+                  onClick={()=>editStudent(student)}
+                >
+                  Edit
+                </button>
+
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={()=>deleteStudent(student._id)}
+                >
+                  Delete
+                </button>
+
+              </td>
+
+            </tr>
           ))}
 
         </tbody>
